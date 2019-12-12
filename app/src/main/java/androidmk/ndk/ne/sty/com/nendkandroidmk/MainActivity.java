@@ -15,8 +15,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         TextView textView = findViewById(R.id.tv_text);
-        textView.setText("nativeTest: " + nativeTest());
+        textView.setText("nativeTest: " + nativeTest() + "-->" + stringFromJNI());
     }
 
-    native int nativeTest();
+    public native int nativeTest();
+
+    public native String stringFromJNI();
 }

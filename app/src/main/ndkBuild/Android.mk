@@ -8,7 +8,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := hello-jni
 
 # 当前模块包含的源代码文件
-LOCAL_SRC_FILES := hello-jni.c
+LOCAL_SRC_FILES := hello-jni.cpp
 
 # 生成一个动态库
 include $(BUILD_SHARED_LIBRARY)

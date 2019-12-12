@@ -4,7 +4,7 @@ android {
     compileSdkVersion 26
     defaultConfig {
         applicationId "androidmk.ndk.ne.sty.com.nendkandroidmk"
-        minSdkVersion 17
+        minSdkVersion 21
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -13,7 +13,8 @@ android {
         //指定源文件的编译方式以及配置编译选项
         externalNativeBuild {
             ndkBuild {
-                abiFilters "armeabi-v7a", "x86"
+//                abiFilters "armeabi-v7a", "x86"
+                arguments 'NDK_APPLICATIONN_MK=Application.mk'
             }
         }
     }

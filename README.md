@@ -163,8 +163,8 @@ System.loadLibrary("hello-jni");
 ```
 
 ## 二、实操
-2.1 创建hello-jni.c文件
-AS新建项目，在app/src/main下新建ndkBuild目录，在该目录下新建hello-jni.c文件。
+2.1 创建hello-jni.cpp文件
+AS新建项目，在app/src/main下新建ndkBuild目录，在该目录下新建hello-jni.cp文件。
 ```c++
 #include <jni.h>
 
@@ -179,7 +179,7 @@ jint Java_androidmk_ndk_ne_sty_com_nendkandroidmk_MainActivity_nativeTest() {
 ```
 2.1 MainActivity中添加本地方法
 ```java
-native int nativeTest();
+public native int nativeTest();
 ```
 2.3 在ndkBuild目录下新建Android.mk文件
 ```bash
@@ -242,4 +242,113 @@ public class MainActivity extends AppCompatActivity {
 
     native int nativeTest();
 }
+```
+
+## 三、补充-NDK基础
+### 3.1 Android.mk构建系统
+#### 3.1.1 其他构建系统变量
+* TARGET_ARCH：目标CPU体系结构的名称，例如arm  
+* TARGET_PLATFORM：目标Android平台的名称，例如android-22  
+* TARGET_ARCH_ABI：目标CPU体系结构和ABI的名称，例如armeabi-v7a  
+* TARGET_ABI：目标平台和ABI的串联，例如android-22-armeabi-v7a  
+
+CPU and architecture  | Setting  
+--------------------- | -------
+ARMv5TE               | armeabi
+ARMv7                 | armeabi-v7a
+ARMv8 AArch64         | arm64-v8a
+i686                  | x86
+x86-64                | x86_64
+mips32                | mips
+mips64                | mips64
+All                   | all  
+
+* LOCAL_MODULE_FILENAME：可选变量，用来重新定义生成的输出文件名称  
+* LOCAL_CPP_EXTENSION：C++源文件的默认扩展名为.cpp，这个变量可以用来为C++源文件指定一个或多个文件扩展名  
+* LOCAL_CPP_FEATURES：可选变量，用来指明模块所依赖的具体C++特性，如RTTI、exceptions等  
+* LOCAL_C_INCLUDES：可选目录列表，NDK安装目录的相对路径，用来搜素头文件  
+* LOCAL_CFLAGS：一组可选的编译器标志，在编译C和C++源文件的时候会被传送给编译器  
+* LOCAL_CPP_FLAGS：一组可选的编译标志，在只编译C++源文件的时候被传送给编译器  
+* LOCAL_WHOLE_STATIC_LIBRARIES：LOCAL_STATIC_LIBRARIES的变体，用来指明应该被包含在生成的共享库中的所有静态库内容  
+* LOCAL_ARM_MODE：可选参数，ARM机器体系结构特有变量，用于指定要生成的ARM二进制类型  
+
+#### 3.1.2 定义新变量
+开发人员可以定义其他变量来简化它们的构建文件。以LOCAL_和NDK_前缀开头的名称预留给Android NDK构建系统使用。  
+```cmakecache
+LOCAL_PATH := $(call my-dir)
+include $(CLEAR_VARS)
+LOCAL_MODULE := hello-jni
+
+MY_SRC_FILES := src/main/cpp/hello-jni.cpp  
+
+LOCAL_SRC_FILES := $(MY_SRC_FILES)
+include $(BUILD_SHARED_LIBRARY)
+```
+
+#### 3.1.3 Application.mk
+Application.mk 是 Android NDK 构建系统使用的一个可选构建文件。  
+* APP_OPTION：改变量可以被设置为 release 或 debug 以改变生成的二进制文件的优化级别  
+* APP_CFLAGS：该变量列出了一些编译器标志，在编译任何模块的 C 和 C++ 源文件时这些标志都会被传送给编译器  
+* APP_CPPFLAGS：该变量列出了一些编译器标志，在编译任何模块的 C++ 源文件时这些标志都会被传送给编译器  
+* APP_ABI：该变量指定编译的目标 ABI 文件  
+* APP_STL：默认情况下，Android NDK 构建系统使用最小 STL 运行库，也被称为 system 库，可以用该变量选择不同的STL实现  
+ 
+#### 3.1.4 C++ Library Support
+* Standard C++ Library support  
+* C++ exceptions support  
+* RTTI support  
+ 
+名称                 | 说明                                           | 功能  
+------------------- | ---------------------------------------------- | ------------------------------------------  
+libstdc++ (default) | The default minimal system C++ runtime library | N/A
+gabi++_static       | The GAbi++ runtime (static)                    | C++ Exceptions and RTTI
+gabi++_shared       | The GAbi++ runtime (shared)                    | C++ Exceptions and RTTI
+stlport_static      | The STLport runtime (static)                   | C++ Exceptions and RTTI; Standard Library
+stlport_shared      | The STLport runtime (shared)                   | C++ Exceptions and RTTI; Standard Library
+gnustl_static       | The GNU STL (static)                           | C++ Exceptions and RTTI; Standard Library
+gnustl_shared       | The GNU STL (shared)                           | C++ Exceptions and RTTI; Standard Library
+c++_static          | The LLVM libc++ runtime (static)               | C++ Exceptions and RTTI; Standard Library
+c++_shared          | The LLVM libc++ runtime (shared)               | C++ Exceptions and RTTI; Standard Library  
+
+### 3.2 JNI 
+#### 3.2.1 概念
+JNI是Java Native Interface的缩写，它提供了若干API实现了Java和其他语言的通信。  
+> Java代码如何调用原生方法  
+> 声明原生方法  
+> 加载共享库  
+> 在C/C++中实现原生方法  
+#### 3.2.1 Java代码调用原生方法 
+```java 
+@Override
+ protected void onCreate(Bundle savedInstanceState) {
+     super.onCreate(savedInstanceState);
+     setContentView(R.layout.activity_main);
+ 
+     TextView textView = findViewById(R.id.tv_text);
+     textView.setText("nativeTest: " + nativeTest());
+ }
+```
+#### 3.2.2 声明原生方法
+```java
+/**
+ * 原生方法由‘hello_jni' 原生库实现
+ * 该原生库与应用程序一起打包
+ */
+public native String stringFromJNI();
+```
+
+#### 3.2.3 加载共享库
+```java
+/**
+ * 这段代码用于在应用启动时加载‘hello_jni' 共享库
+ * 该库在应用程序安装时由包管理器解压到 /data/data/androidmk.ndk.ne.sty.com.nendkandroidmk/lib/libhello_jni.so中
+ */
+static {
+    System.loadLibrary("hello_jni");
+}
+```
+
+#### 3.2.4 实现原生方法 
+```c++
+
 ```
