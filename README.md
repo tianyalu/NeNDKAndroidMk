@@ -164,22 +164,36 @@ System.loadLibrary("hello-jni");
 
 ## 二、实操
 2.1 创建hello-jni.cpp文件
-AS新建项目，在app/src/main下新建ndkBuild目录，在该目录下新建hello-jni.cp文件。
+AS新建项目，在app/src/main下新建ndkBuild目录，在该目录下新建hello-jni.cpp文件。
 ```c++
 #include <jni.h>
+//#include <string> //引入<string>头文件会报错，目前不知道问题所在
 
 int test() {
     return 124;
 }
 
 //androidmk.ndk.ne.sty.com.nendkandroidmk
-jint Java_androidmk_ndk_ne_sty_com_nendkandroidmk_MainActivity_nativeTest() {
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_androidmk_ndk_ne_sty_com_nendkandroidmk_MainActivity_nativeTest(JNIEnv *env, jobject thiz) {
+//    std::string hello = "hello from C++";
     return test();
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_androidmk_ndk_ne_sty_com_nendkandroidmk_MainActivity_stringFromJNI(JNIEnv *env, jobject thiz) {
+//    std::string hello = "hello from C++";
+//    return env->NewStringUTF(hello.c_str());
+    return env->NewStringUTF("hello from C++");
 }
 ```
 2.1 MainActivity中添加本地方法
 ```java
 public native int nativeTest();
+public native String stringFromJNI();
 ```
 2.3 在ndkBuild目录下新建Android.mk文件
 ```bash
@@ -237,10 +251,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         TextView textView = findViewById(R.id.tv_text);
-        textView.setText("nativeTest: " + nativeTest());
+        textView.setText("nativeTest: " + nativeTest() + "-->" + stringFromJNI());
     }
 
-    native int nativeTest();
+    public native int nativeTest();
+
+    public native String stringFromJNI();
 }
 ```
 
@@ -319,21 +335,29 @@ JNI是Java Native Interface的缩写，它提供了若干API实现了Java和其�
 > 在C/C++中实现原生方法  
 #### 3.2.1 Java代码调用原生方法 
 ```java 
-@Override
- protected void onCreate(Bundle savedInstanceState) {
-     super.onCreate(savedInstanceState);
-     setContentView(R.layout.activity_main);
- 
-     TextView textView = findViewById(R.id.tv_text);
-     textView.setText("nativeTest: " + nativeTest());
- }
+public class MainActivity extends AppCompatActivity {
+
+    {
+        System.loadLibrary("hello-jni");
+    }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        TextView textView = findViewById(R.id.tv_text);
+        textView.setText("nativeTest: " + nativeTest() + "-->" + stringFromJNI());
+    }
+}
 ```
 #### 3.2.2 声明原生方法
 ```java
 /**
- * 原生方法由‘hello_jni' 原生库实现
+ * 原生方法由‘hello-jni' 原生库实现
  * 该原生库与应用程序一起打包
  */
+public native int nativeTest();
+
 public native String stringFromJNI();
 ```
 
@@ -344,11 +368,32 @@ public native String stringFromJNI();
  * 该库在应用程序安装时由包管理器解压到 /data/data/androidmk.ndk.ne.sty.com.nendkandroidmk/lib/libhello_jni.so中
  */
 static {
-    System.loadLibrary("hello_jni");
+    System.loadLibrary("hello-jni");
 }
 ```
 
 #### 3.2.4 实现原生方法 
 ```c++
+#include <jni.h>
+//#include <string> //引入<string>头文件会报错，目前不知道问题所在
 
+int test() {
+    return 124;
+}
+
+//androidmk.ndk.ne.sty.com.nendkandroidmk
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_androidmk_ndk_ne_sty_com_nendkandroidmk_MainActivity_nativeTest(JNIEnv *env, jobject thiz) {
+    return test();
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_androidmk_ndk_ne_sty_com_nendkandroidmk_MainActivity_stringFromJNI(JNIEnv *env, jobject thiz) {
+//    std::string hello = "hello from C++";
+//    return env->NewStringUTF(hello.c_str());
+    return env->NewStringUTF("hello from C++");
+}
 ```
